@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "plate-scraper"
-version = "0.1.0"
+version = "0.2.0"
 description = "scrape sodexomyway for menu data because their site is so slow"
 authors = ["ryleu <69326171+ryleu@users.noreply.github.com>"]
 license = "AGPL-3.0-or-later"
