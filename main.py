@@ -116,11 +116,11 @@ async def menu(ctx: interactions.SlashContext, date: str = ""):
         date = f"{('0' + str(today.month))[-2:]}/{('0' + str(today.day))[-2:]}/{today.year}"
 
     try:
-        data = get_menu_data(date)
+        menu = get_menu_data(date)
     except HttpNotOkException:
         return await ctx.send("Sodexo is not ok please send help or try again later.")
     except json.decoder.JSONDecodeError or NoNutritionDataException:
-        return await ctx.send(f"There doesn't seem to be any menu data for {date}!")
+        menu = {}
     
     embed = interactions.Embed(
         f"Menu for {date}",
@@ -135,9 +135,9 @@ async def menu(ctx: interactions.SlashContext, date: str = ""):
                 label=x.lower(),
                 custom_id=f"{date}.{x}",
             )
-            for x in data
+            for x in menu
         ]
-    )
+    ) if len(menu.keys()) > 0 else None
 
     await ctx.send(embed=embed, components=buttons)
 
@@ -154,8 +154,8 @@ async def button_pressed(event: interactions.events.ButtonPressed):
         menu = get_menu_data(date)
     except HttpNotOkException:
         return await ctx.send("Sodexo is not ok please send help or try again later.", ephemeral=True)
-    except json.decoder.JSONDecodeError:
-        return await ctx.send("There doesn't seem to be any menu data for that day!", ephemeral=True)
+    except json.decoder.JSONDecodeError or NoNutritionDataException:
+        menu = {}
 
     meal = menu[meal_name]
 
