@@ -11,6 +11,7 @@ packages = [{include = "plate_scraper"}]
 python = "^3.11"
 requests = "^2.31.0"
 discord-py-interactions = "^5.10.0"
+beautifulsoup4 = "^4.12.2"
 
 
 [build-system]

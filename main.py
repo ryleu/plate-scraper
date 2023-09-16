@@ -5,6 +5,7 @@ import datetime
 import requests
 import os
 import interactions
+from bs4 import BeautifulSoup
 
 if os.path.exists("config.json"):
     with open("config.json") as file:
@@ -16,6 +17,16 @@ else:
         "where_am_i": os.environ["WHERE_AM_I"],
         "bot_token": os.environ["BOT_TOKEN"],
     }
+
+
+class HttpNotOkException(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
+
+
+class NoNutritionDataException(Exception):
+    def __init__(self, *args: object) -> None:
+        super().__init__(*args)
 
 
 def get_menu_data(query_day: str):
@@ -37,24 +48,18 @@ def get_menu_data(query_day: str):
         # if no file for today exists, pull the data from sodexo
         response = requests.get(base_url.format(**config, date=query_day))
         if not response.ok:
-            raise Exception  # TODO: make this error useful later
+            raise HttpNotOkException
         html = response.text
-        with open(file_name, "w+") as file:
-            file.write(html)
 
-        # this is a hack to pull the json data out of the html
-        # TODO: make this less shit
-        data = json.loads(
-            html.split("<div id='nutData' data-schools='False' class='hide'>")[1].split(
-                "</div>"
-            )[0]
-        )
+        json_data = BeautifulSoup(html, "html.parser").find(id="nutData")
+
+        # raise a key error if the nutrition data is not found in the html data
+        if not json_data:
+            raise NoNutritionDataException
+
+        data = json.loads(json_data.text)
 
         for menu in data:
-            # if something goes wrong and we don't have a menu for today, raise an exception
-            if menu == {}:
-                raise Exception
-
             # clean up the menu data, sorting it first by meal and then by course
             clean_menu = {}
             for item in menu["menuItems"]:
@@ -110,7 +115,13 @@ async def menu(ctx: interactions.SlashContext, date: str = ""):
         today = datetime.datetime.now()
         date = f"{('0' + str(today.month))[-2:]}/{('0' + str(today.day))[-2:]}/{today.year}"
 
-    data = get_menu_data(date)
+    try:
+        data = get_menu_data(date)
+    except HttpNotOkException:
+        return await ctx.send("Sodexo is not ok please send help or try again later.")
+    except json.decoder.JSONDecodeError or NoNutritionDataException:
+        return await ctx.send(f"There doesn't seem to be any menu data for {date}!")
+    
     embed = interactions.Embed(
         f"Menu for {date}",
         description="Press a button to get started!",
@@ -138,7 +149,13 @@ async def button_pressed(event: interactions.events.ButtonPressed):
     custom_id = ctx.custom_id.split(".")
     date = custom_id[0]
     meal_name = custom_id[1]
-    menu = get_menu_data(date)
+
+    try:
+        menu = get_menu_data(date)
+    except HttpNotOkException:
+        return await ctx.send("Sodexo is not ok please send help or try again later.", ephemeral=True)
+    except json.decoder.JSONDecodeError:
+        return await ctx.send("There doesn't seem to be any menu data for that day!", ephemeral=True)
 
     meal = menu[meal_name]
 
