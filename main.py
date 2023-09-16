@@ -6,8 +6,16 @@ import requests
 import os
 import interactions
 
-with open("config.json") as file:
-    config = json.loads(file.read())
+if os.path.exists("config.json"):
+    with open("config.json") as file:
+        config = json.loads(file.read())
+else:
+    config = {
+        "menu_id": os.environ["MENU_ID"],
+        "location_id": os.environ["LOCATION_ID"],
+        "where_am_i": os.environ["WHERE_AM_I"],
+        "bot_token": os.environ["BOT_TOKEN"]
+    }
 
 
 def get_menu_data():
