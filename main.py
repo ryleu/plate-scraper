@@ -70,10 +70,11 @@ def get_menu_data():
         if course not in clean_menu[meal]:
             clean_menu[meal][course] = []
 
-        description = item["description"]
-
         clean_menu[meal][course].append(
-            {"name": item["formalName"], "description": description if description else "*No description.*"}
+            {
+                "name": item["formalName"],
+                "description": item["description"],
+            }
         )
 
     return clean_menu
@@ -83,9 +84,11 @@ cached_menus = {}
 
 bot = interactions.Client()
 
+
 @interactions.listen()
 async def on_startup():
     print("Bot is ready!")
+
 
 @interactions.slash_command(name="menu", description="Get today's menu")
 async def menu(ctx: interactions.SlashContext):
@@ -96,12 +99,15 @@ async def menu(ctx: interactions.SlashContext):
     embed = interactions.Embed(
         f"Menu for {config['date']}",
         description="Press a button to get started!",
-        color="#184ed7"
+        color="#184ed7",
     )
+    # create a button for each meal
     buttons = interactions.spread_to_rows(
         *[
             interactions.Button(
-                style=interactions.ButtonStyle.PRIMARY, label=x.lower(), custom_id=f"{config['date']}.{x}"
+                style=interactions.ButtonStyle.PRIMARY,
+                label=x.lower(),
+                custom_id=f"{config['date']}.{x}",
             )
             for x in data
         ]
@@ -109,9 +115,11 @@ async def menu(ctx: interactions.SlashContext):
 
     await ctx.send(embed=embed, components=buttons)
 
+
 @interactions.listen()
 async def button_pressed(event: interactions.events.ButtonPressed):
     ctx = event.ctx
+    # get the button's info from its custom id
     custom_id = ctx.custom_id.split(".")
     date = custom_id[0]
     meal_name = custom_id[1]
@@ -120,36 +128,45 @@ async def button_pressed(event: interactions.events.ButtonPressed):
 
     if date not in cached_menus:
         return await ctx.send("This menu is no longer available!", ephemeral=True)
-    
+
     if len(custom_id) == 2:
+        # this branch runs when a meal button is pressed
         embed = interactions.Embed(
-            f"Entree list for {config['date']}'s {meal_name.lower()}",
+            f"Entrees for {config['date']}'s {meal_name.lower()}",
             description="Press a button to get your menu!",
-            color="#184ed7"
+            color="#184ed7",
         )
+        # add a button for each entree
         buttons = interactions.spread_to_rows(
             *[
                 interactions.Button(
-                    style=interactions.ButtonStyle.PRIMARY, label=x.lower(), custom_id=f"{config['date']}.{meal_name}.{x}"
+                    style=interactions.ButtonStyle.PRIMARY,
+                    label=x.lower(),
+                    custom_id=f"{config['date']}.{meal_name}.{x}",
                 )
                 for x in meal
             ]
         )
         await ctx.send(embed=embed, components=buttons, ephemeral=True)
     elif len(custom_id) == 3:
+        # this branch runs when a course button is pressed
         course_name = custom_id[2]
+        course = meal[course_name]
 
         embed = interactions.Embed(
-            f"Menu for {config['date']}'s {meal_name.lower()}'s {course_name.lower()}",
-            color="#184ed7"
+            f"{course_name.lower()} menu for {config['date']}'s {meal_name.lower()}",
+            color="#184ed7",
         )
 
-        for food in meal[course_name]:
-            embed.add_field(
-                name=food["name"],
-                value=food["description"]
-            )
-        
+        food_list = ""
+        for food in course:
+            food_list += f"- **{food['name']}**"
+            if food["description"]:
+                food_list += f" - *{food['description']}*"
+            food_list += "\n"
+        embed.description = food_list
+
         await ctx.send(embed=embed, ephemeral=True)
+
 
 bot.start(config["bot_token"])
