@@ -121,23 +121,33 @@ async def menu(ctx: interactions.SlashContext, date: str = ""):
         return await ctx.send("Sodexo is not ok please send help or try again later.")
     except json.decoder.JSONDecodeError or NoNutritionDataException:
         menu = {}
-    
+
     embed = interactions.Embed(
         f"Menu for {date}",
         description="Press a button to get started!",
         color="#184ed7",
     )
+
+    embed.set_footer(
+        text="Like this bot? Help pay for server costs by buying me a coffee! https://ko-fi.com/ryleu",
+        icon_url="https://cdn.discordapp.com/attachments/810959625306243095/1160059628281929810/kofi_s_logo_nolabel.png",
+    )
+
     # create a button for each meal
-    buttons = interactions.spread_to_rows(
-        *[
-            interactions.Button(
-                style=interactions.ButtonStyle.PRIMARY,
-                label=x.lower(),
-                custom_id=f"{date}.{x}",
-            )
-            for x in menu
-        ]
-    ) if len(menu.keys()) > 0 else None
+    buttons = (
+        interactions.spread_to_rows(
+            *[
+                interactions.Button(
+                    style=interactions.ButtonStyle.PRIMARY,
+                    label=x.lower(),
+                    custom_id=f"{date}.{x}",
+                )
+                for x in menu
+            ]
+        )
+        if len(menu.keys()) > 0
+        else None
+    )
 
     await ctx.send(embed=embed, components=buttons)
 
@@ -153,7 +163,9 @@ async def button_pressed(event: interactions.events.ButtonPressed):
     try:
         menu = get_menu_data(date)
     except HttpNotOkException:
-        return await ctx.send("Sodexo is not ok please send help or try again later.", ephemeral=True)
+        return await ctx.send(
+            "Sodexo is not ok please send help or try again later.", ephemeral=True
+        )
     except json.decoder.JSONDecodeError or NoNutritionDataException:
         menu = {}
 
