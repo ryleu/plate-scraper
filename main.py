@@ -177,12 +177,12 @@ async def button_pressed(event: interactions.events.ButtonPressed):
     if len(custom_id) == 2:
         # this branch runs when a meal button is pressed
         embed = interactions.Embed(
-            f"Entrees for {date}'s {meal_name.lower()}",
+            f"Courses for {date}'s {meal_name.lower()}",
             description="Press a button to get your menu!",
             color="#184ed7",
             author=author_branding(),
         )
-        # add a button for each entree
+        # add a button for each course
         buttons = interactions.spread_to_rows(
             *[
                 interactions.Button(
