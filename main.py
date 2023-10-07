@@ -88,6 +88,13 @@ def get_menu_data(query_day: str):
     return output
 
 
+def author_branding():
+    return interactions.EmbedAuthor(
+        name="Help pay for server costs!",
+        icon_url="https://cdn.discordapp.com/attachments/810959625306243095/1160059628281929810/kofi_s_logo_nolabel.png",
+        url="https://ko-fi.com/ryleu",
+    )
+
 bot = interactions.Client()
 
 
@@ -126,11 +133,7 @@ async def menu(ctx: interactions.SlashContext, date: str = ""):
         f"Menu for {date}",
         description="Press a button to get started!",
         color="#184ed7",
-    )
-
-    embed.set_footer(
-        text="Like this bot? Help pay for server costs by buying me a coffee! https://ko-fi.com/ryleu",
-        icon_url="https://cdn.discordapp.com/attachments/810959625306243095/1160059628281929810/kofi_s_logo_nolabel.png",
+        author=author_branding(),
     )
 
     # create a button for each meal
@@ -177,6 +180,7 @@ async def button_pressed(event: interactions.events.ButtonPressed):
             f"Entrees for {date}'s {meal_name.lower()}",
             description="Press a button to get your menu!",
             color="#184ed7",
+            author=author_branding(),
         )
         # add a button for each entree
         buttons = interactions.spread_to_rows(
@@ -189,6 +193,7 @@ async def button_pressed(event: interactions.events.ButtonPressed):
                 for x in meal
             ]
         )
+
         await ctx.send(embed=embed, components=buttons, ephemeral=True)
     elif len(custom_id) == 3:
         # this branch runs when a course button is pressed
@@ -198,6 +203,7 @@ async def button_pressed(event: interactions.events.ButtonPressed):
         embed = interactions.Embed(
             f"{course_name.lower()} menu for {date}'s {meal_name.lower()}",
             color="#184ed7",
+            author=author_branding(),
         )
 
         food_list = ""
